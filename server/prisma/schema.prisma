@@ -1,0 +1,397 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(cuid())
+  supabaseId  String   @unique
+  phone       String   @unique
+  name        String
+  avatar      String?
+  role        Role     @default(CLIENT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  staffProfile    StaffProfile?
+  clientProfile   ClientProfile?
+  ratingsGiven    ServiceRating[]  @relation("ClientRatings")
+  clientRatings   ClientRating[]   @relation("ClientBeingRated")
+  paymentLogs     PaymentLog[]
+  auditLogs       AuditLog[]
+  orders          Order[]
+
+  @@index([phone])
+  @@index([supabaseId])
+}
+
+enum Role {
+  CLIENT
+  STAFF
+  OUTLET_ADMIN
+  SELLER
+  ADMIN
+}
+
+// ─── Staff Profiles ────────────────────────────────────────────────────────────
+
+model StaffProfile {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                  String?
+  specialties          String[]
+  outletId             String?
+  outlet               Outlet?   @relation(fields: [outletId], references: [id])
+  freelance            Boolean   @default(true)
+  mobileService        Boolean   @default(false)
+  mobileRadiusKm       Float?
+  city                 String    @default("Nairobi")
+  latitude             Float?
+  longitude            Float?
+  subscriptionTier     SubscriptionTier @default(NONE)
+  subscriptionValidUntil DateTime?
+  totalPoints          Int       @default(0)
+  weeklyPoints         Int       @default(0)
+  upvoteCount          Int       @default(0)
+  avgRating            Float     @default(0)
+  reviewCount          Int       @default(0)
+  badgeIds             String[]
+  verified             Boolean   @default(false)
+  availableToday       Boolean   @default(false)
+  availableForPlacement Boolean  @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  serviceMenuItems  ServiceMenuItem[]
+  portfolioImages   PortfolioImage[]
+  ratingsReceived   ServiceRating[]   @relation("StaffRatings")
+  clientRatings     ClientRating[]    @relation("StaffGivingClientRating")
+  competitionEntries CompetitionEntry[]
+  communityPosts    CommunityPost[]
+  jobApplications   JobApplication[]
+
+  @@index([city, subscriptionTier])
+  @@index([totalPoints])
+  @@index([city, specialties])
+}
+
+enum SubscriptionTier {
+  NONE
+  BASIC
+  FEATURED
+}
+
+model ServiceMenuItem {
+  id              String   @id @default(cuid())
+  staffId         String
+  staff           StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  category        String
+  name            String
+  description     String?
+  priceMin        Float?
+  priceMax        Float?
+  durationMinutes Int?
+  avgRating       Float    @default(0)
+  ratingCount     Int      @default(0)
+  createdAt       DateTime @default(now())
+}
+
+model PortfolioImage {
+  id                  String   @id @default(cuid())
+  staffId             String
+  staff               StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  imageUrl            String
+  caption             String?
+  service             String?
+  upvotes             Int      @default(0)
+  uploadedByClientId  String?
+  createdAt           DateTime @default(now())
+}
+
+// ─── Outlets ──────────────────────────────────────────────────────────────────
+
+model Outlet {
+  id                  String    @id @default(cuid())
+  name                String
+  type                OutletType
+  description         String?
+  address             String
+  city                String
+  latitude            Float?
+  longitude           Float?
+  phone               String?
+  instagram           String?
+  coverImage          String?
+  logoImage           String?
+  subscriptionTier    SubscriptionTier @default(NONE)
+  subscriptionValidUntil DateTime?
+  featuredUntil       DateTime?
+  aggregatePoints     Int       @default(0)
+  staffCount          Int       @default(0)
+  avgRating           Float     @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  staff        StaffProfile[]
+  jobPostings  JobPosting[]
+
+  @@index([city])
+  @@index([aggregatePoints])
+}
+
+enum OutletType {
+  SALON
+  SPA
+  BARBERSHOP
+  WELLNESS
+  NAIL_STUDIO
+  MULTI
+}
+
+// ─── Ratings ─────────────────────────────────────────────────────────────────
+
+model ServiceRating {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          User     @relation("ClientRatings", fields: [clientId], references: [id])
+  staffId         String
+  staff           StaffProfile @relation("StaffRatings", fields: [staffId], references: [id])
+  serviceCategory String
+  score           Float
+  review          String?
+  images          String[]
+  upvotes         Int      @default(0)
+  flagged         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@unique([clientId, staffId, serviceCategory])
+  @@index([staffId, createdAt])
+}
+
+model ClientRating {
+  id                  String   @id @default(cuid())
+  staffId             String
+  staff               StaffProfile @relation("StaffGivingClientRating", fields: [staffId], references: [id])
+  clientId            String
+  client              User     @relation("ClientBeingRated", fields: [clientId], references: [id])
+  professionalism     Float
+  punctuality         Float
+  paymentReliability  Float
+  overallScore        Float
+  notes               String?
+  createdAt           DateTime @default(now())
+}
+
+model ClientProfile {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tastePoints  Int       @default(0)
+  tasteTier    TasteTier @default(BRONZE)
+  avgStaffRating Float   @default(0)
+  badgeIds     String[]
+  totalRatingsGiven Int  @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum TasteTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+// ─── Competitions ─────────────────────────────────────────────────────────────
+
+model Competition {
+  id                String            @id @default(cuid())
+  title             String
+  description       String
+  category          String
+  coverImage        String?
+  entryFeeKes       Float
+  prizePool         Float
+  entryOpenDate     DateTime
+  entryCloseDate    DateTime
+  votingOpenDate    DateTime
+  votingCloseDate   DateTime
+  status            CompetitionStatus @default(upcoming)
+  participantCount  Int               @default(0)
+  totalVotes        Int               @default(0)
+  createdAt         DateTime          @default(now())
+
+  entries CompetitionEntry[]
+}
+
+enum CompetitionStatus {
+  upcoming
+  entry_open
+  voting
+  closed
+  prizes_paid
+}
+
+model CompetitionEntry {
+  id             String      @id @default(cuid())
+  competitionId  String
+  competition    Competition @relation(fields: [competitionId], references: [id])
+  staffId        String
+  staff          StaffProfile @relation(fields: [staffId], references: [id])
+  imageUrl       String
+  caption        String?
+  voteCount      Int         @default(0)
+  mpesaRef       String?
+  createdAt      DateTime    @default(now())
+
+  @@unique([competitionId, staffId])
+  @@index([competitionId, voteCount])
+}
+
+// ─── Marketplace ──────────────────────────────────────────────────────────────
+
+model Product {
+  id                  String          @id @default(cuid())
+  sellerId            String
+  seller              User            @relation(fields: [sellerId], references: [id])
+  name                String
+  description         String
+  category            String
+  linkedServices      String[]
+  images              String[]
+  priceKes            Float
+  stock               Int             @default(0)
+  endorsedByStaffIds  String[]
+  avgRating           Float           @default(0)
+  reviewCount         Int             @default(0)
+  isFeatured          Boolean         @default(false)
+  isFlashSale         Boolean         @default(false)
+  flashSalePrice      Float?
+  flashSaleEndsAt     DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  orderItems OrderItem[]
+
+  @@index([category])
+  @@index([isFeatured, isFlashSale])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  clientId        String
+  client          User        @relation(fields: [clientId], references: [id])
+  totalKes        Float
+  deliveryAddress String
+  status          OrderStatus @default(pending)
+  mpesaRef        String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items OrderItem[]
+}
+
+enum OrderStatus {
+  pending
+  paid
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  priceKes  Float
+}
+
+// ─── Community ────────────────────────────────────────────────────────────────
+
+model CommunityPost {
+  id           String       @id @default(cuid())
+  authorId     String
+  author       StaffProfile @relation(fields: [authorId], references: [id])
+  imageUrl     String?
+  videoUrl     String?
+  caption      String
+  tags         String[]
+  likeCount    Int          @default(0)
+  commentCount Int          @default(0)
+  flagged      Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+}
+
+model JobPosting {
+  id                String       @id @default(cuid())
+  outletId          String
+  outlet            Outlet       @relation(fields: [outletId], references: [id])
+  title             String
+  specialtiesNeeded String[]
+  description       String
+  salaryMin         Float?
+  salaryMax         Float?
+  isFullTime        Boolean      @default(true)
+  expiresAt         DateTime
+  applicantCount    Int          @default(0)
+  createdAt         DateTime     @default(now())
+
+  applications JobApplication[]
+}
+
+model JobApplication {
+  id           String       @id @default(cuid())
+  jobPostingId String
+  jobPosting   JobPosting   @relation(fields: [jobPostingId], references: [id])
+  staffId      String
+  staff        StaffProfile @relation(fields: [staffId], references: [id])
+  status       String       @default("pending")
+  createdAt    DateTime     @default(now())
+
+  @@unique([jobPostingId, staffId])
+}
+
+// ─── Payments & Audit ─────────────────────────────────────────────────────────
+
+model PaymentLog {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  entityId           String
+  tier               String
+  amount             Float
+  phone              String
+  checkoutRequestId  String   @unique
+  merchantRequestId  String
+  mpesaRef           String?
+  status             String   @default("pending")
+  createdAt          DateTime @default(now())
+
+  @@index([checkoutRequestId])
+  @@index([status, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+}
