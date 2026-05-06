@@ -51,6 +51,75 @@ export default async function marketplaceRoutes(app: FastifyInstance) {
     return { product }
   })
 
+  // POST /marketplace/products — create product (staff or seller)
+  app.post('/products', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const allowed = ['STAFF', 'SELLER', 'OUTLET_ADMIN', 'ADMIN']
+    if (!allowed.includes(req.user.role)) return reply.status(403).send({ error: 'Forbidden' })
+
+    const { name, description, category, images = [], priceKes, stock, linkedServices = [] } = req.body as {
+      name: string; description: string; category: string
+      images?: string[]; priceKes: number; stock: number; linkedServices?: string[]
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        sellerId: req.user.id,
+        name,
+        description,
+        category,
+        images,
+        priceKes,
+        stock,
+        linkedServices,
+      },
+      include: { seller: { select: { id: true, name: true, avatar: true } } },
+    })
+    return { product }
+  })
+
+  // PATCH /marketplace/products/:id
+  app.patch('/products/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const product = await prisma.product.findUnique({ where: { id } })
+    if (!product) return reply.status(404).send({ error: 'Product not found' })
+    if (product.sellerId !== req.user.id && req.user.role !== 'ADMIN') {
+      return reply.status(403).send({ error: 'Forbidden' })
+    }
+
+    const { name, description, category, images, priceKes, stock, linkedServices,
+      isFlashSale, flashSalePrice, flashSaleEndsAt } = req.body as Record<string, unknown>
+
+    const updated = await prisma.product.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name: name as string }),
+        ...(description !== undefined && { description: description as string }),
+        ...(category !== undefined && { category: category as string }),
+        ...(images !== undefined && { images: images as string[] }),
+        ...(priceKes !== undefined && { priceKes: Number(priceKes) }),
+        ...(stock !== undefined && { stock: Number(stock) }),
+        ...(linkedServices !== undefined && { linkedServices: linkedServices as string[] }),
+        ...(isFlashSale !== undefined && { isFlashSale: Boolean(isFlashSale) }),
+        ...(flashSalePrice !== undefined && { flashSalePrice: flashSalePrice ? Number(flashSalePrice) : null }),
+        ...(flashSaleEndsAt !== undefined && { flashSaleEndsAt: flashSaleEndsAt ? new Date(flashSaleEndsAt as string) : null }),
+      },
+      include: { seller: { select: { id: true, name: true, avatar: true } } },
+    })
+    return { product: updated }
+  })
+
+  // DELETE /marketplace/products/:id
+  app.delete('/products/:id', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const product = await prisma.product.findUnique({ where: { id } })
+    if (!product) return reply.status(404).send({ error: 'Product not found' })
+    if (product.sellerId !== req.user.id && req.user.role !== 'ADMIN') {
+      return reply.status(403).send({ error: 'Forbidden' })
+    }
+    await prisma.product.delete({ where: { id } })
+    return { success: true }
+  })
+
   // POST /marketplace/orders
   app.post('/orders', { preHandler: [app.authenticate] }, async (req, reply) => {
     const { items, deliveryAddress } = req.body as {

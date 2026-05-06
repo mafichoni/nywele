@@ -95,6 +95,65 @@ export default async function staffRoutes(app: FastifyInstance) {
     })
     return { availableForPlacement: updated.availableForPlacement }
   })
+
+  // POST /staff/:id/menu-items
+  app.post('/:id/menu-items', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const staff = await prisma.staffProfile.findUnique({ where: { id } })
+    if (!staff || staff.userId !== req.user.id) return reply.status(403).send({ error: 'Forbidden' })
+
+    const { category, name, description, priceMin, priceMax, durationMinutes } = req.body as {
+      category: string; name: string; description?: string
+      priceMin?: number; priceMax?: number; durationMinutes?: number
+    }
+
+    const item = await prisma.serviceMenuItem.create({
+      data: {
+        staffId: id,
+        category,
+        name,
+        description,
+        priceMin: priceMin ?? null,
+        priceMax: priceMax ?? null,
+        durationMinutes: durationMinutes ?? null,
+      },
+    })
+    return { item }
+  })
+
+  // PATCH /staff/:id/menu-items/:itemId
+  app.patch('/:id/menu-items/:itemId', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id, itemId } = req.params as { id: string; itemId: string }
+    const staff = await prisma.staffProfile.findUnique({ where: { id } })
+    if (!staff || staff.userId !== req.user.id) return reply.status(403).send({ error: 'Forbidden' })
+
+    const { name, description, priceMin, priceMax, durationMinutes } = req.body as {
+      name?: string; description?: string
+      priceMin?: number; priceMax?: number; durationMinutes?: number
+    }
+
+    const item = await prisma.serviceMenuItem.update({
+      where: { id: itemId },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(priceMin !== undefined && { priceMin }),
+        ...(priceMax !== undefined && { priceMax }),
+        ...(durationMinutes !== undefined && { durationMinutes }),
+      },
+    })
+    return { item }
+  })
+
+  // DELETE /staff/:id/menu-items/:itemId
+  app.delete('/:id/menu-items/:itemId', { preHandler: [app.authenticate] }, async (req, reply) => {
+    const { id, itemId } = req.params as { id: string; itemId: string }
+    const staff = await prisma.staffProfile.findUnique({ where: { id } })
+    if (!staff || staff.userId !== req.user.id) return reply.status(403).send({ error: 'Forbidden' })
+
+    await prisma.serviceMenuItem.delete({ where: { id: itemId } })
+    return { success: true }
+  })
 }
 
 async function updateLeaderboardScore(

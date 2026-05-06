@@ -9,6 +9,10 @@ import CompetitionsPage from '@/pages/CompetitionsPage'
 import MarketplacePage from '@/pages/MarketplacePage'
 import CommunityPage from '@/pages/CommunityPage'
 import MePage from '@/pages/MePage'
+import EditProfilePage from '@/pages/me/EditProfilePage'
+import RatingsPage from '@/pages/me/RatingsPage'
+import NotificationsPage from '@/pages/me/NotificationsPage'
+import SettingsPage from '@/pages/me/SettingsPage'
 import AdminPage from '@/pages/AdminPage'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
@@ -74,6 +78,10 @@ export default function App() {
         <Route path="/market" element={<MarketplacePage />} />
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/me" element={<MePage />} />
+        <Route path="/me/edit" element={<EditProfilePage />} />
+        <Route path="/me/ratings" element={<RatingsPage />} />
+        <Route path="/me/notifications" element={<NotificationsPage />} />
+        <Route path="/me/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>
 

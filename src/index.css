@@ -1,9 +1,61 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── Fonts ─────────────────────────────────────────── */
   --font-heading: "Syne", sans-serif;
   --font-body: "DM Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  /* ── Brand colors ──────────────────────────────────── */
+  --color-brand-green:         #1A3A2A;
+  --color-brand-green-mid:     #2D6A4F;
+  --color-brand-green-light:   #52B788;
+  --color-brand-green-lighter: #D8F3DC;
+  --color-brand-gold:          #C9A84C;
+  --color-brand-gold-light:    #F5E6C0;
+  --color-onyx:                #1C1C1E;
+  --color-ivory:               #F8F6F2;
+  --color-slate:               #3D4F5C;
+  --color-silver:              #8A9BA8;
+  --color-divider:             #D1C9B8;
+
+  /* ── Animations ────────────────────────────────────── */
+  --animate-rank-up:    rankUp    0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-badge-pop:  badgePop  0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-gold-pulse: goldPulse 2s ease-in-out infinite;
+  --animate-mpesa-ring: mpesaRing 1.5s ease-in-out infinite;
+  --animate-shimmer:    shimmer   1.5s linear infinite;
+
+  @keyframes rankUp {
+    0%   { transform: translateY(8px); opacity: 0; }
+    100% { transform: translateY(0);   opacity: 1; }
+  }
+  @keyframes badgePop {
+    0%   { transform: scale(0);   opacity: 0; }
+    80%  { transform: scale(1.2);             }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  @keyframes goldPulse {
+    0%, 100% { box-shadow: 0 0 0 0px rgba(201,168,76,0.4); }
+    50%      { box-shadow: 0 0 0 8px rgba(201,168,76,0);   }
+  }
+  @keyframes mpesaRing {
+    0%, 100% { box-shadow: 0 0 0 0px  rgba(0,156,58,0.5); }
+    50%      { box-shadow: 0 0 0 10px rgba(0,156,58,0);   }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  /* ── Background images ─────────────────────────────── */
+  --background-image-shimmer-gradient: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.06) 50%, transparent 75%);
+  --background-image-gold-gradient:    linear-gradient(135deg, #C9A84C 0%, #F5E6C0 50%, #C9A84C 100%);
+  --background-image-green-gradient:   linear-gradient(135deg, #1A3A2A 0%, #2D6A4F 100%);
+
+  /* ── Misc ──────────────────────────────────────────── */
+  --backdrop-blur-xs: 2px;
+  --breakpoint-xs:    375px;
 }
 
 @layer base {

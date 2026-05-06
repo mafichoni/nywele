@@ -126,6 +126,50 @@ export default async function ratingsRoutes(app: FastifyInstance) {
 
     return { ratings, total, page: p, hasMore: skip + 20 < total }
   })
+
+  // GET /ratings/my — ratings given (client) or received (staff)
+  app.get('/my', { preHandler: [app.authenticate] }, async (req) => {
+    const { page = 1 } = req.query as { page?: number }
+    const p = Number(page)
+    const skip = (p - 1) * 20
+
+    if (req.user.role === 'STAFF') {
+      const staffProfile = await prisma.staffProfile.findUnique({ where: { userId: req.user.id } })
+      if (!staffProfile) return { ratings: [], total: 0, page: p, hasMore: false }
+      const [ratings, total] = await Promise.all([
+        prisma.serviceRating.findMany({
+          where: { staffId: staffProfile.id },
+          skip,
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+          include: { client: { select: { id: true, name: true, avatar: true } } },
+        }),
+        prisma.serviceRating.count({ where: { staffId: staffProfile.id } }),
+      ])
+      return { ratings, total, page: p, hasMore: skip + 20 < total, type: 'received' }
+    }
+
+    const [ratings, total] = await Promise.all([
+      prisma.serviceRating.findMany({
+        where: { clientId: req.user.id },
+        skip,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          staff: {
+            select: {
+              id: true,
+              user: { select: { id: true, name: true, avatar: true } },
+              specialties: true,
+              city: true,
+            },
+          },
+        },
+      }),
+      prisma.serviceRating.count({ where: { clientId: req.user.id } }),
+    ])
+    return { ratings, total, page: p, hasMore: skip + 20 < total, type: 'given' }
+  })
 }
 
 function getWeekKey() {

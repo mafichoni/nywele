@@ -27,10 +27,13 @@ api.interceptors.response.use(
 export const staffApi = {
   getFeed: (params: Record<string, unknown>) => api.get('/feed', { params }),
   getProfile: (id: string) => api.get(`/staff/${id}`),
-  updateProfile: (id: string, data: FormData) => api.patch(`/staff/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  updateProfile: (id: string, data: Record<string, unknown>) => api.patch(`/staff/${id}`, data),
   upvote: (staffId: string) => api.post(`/staff/${staffId}/upvote`),
   toggleAvailability: (staffId: string) => api.post(`/staff/${staffId}/availability`),
   togglePlacementAvailable: (staffId: string) => api.post(`/staff/${staffId}/placement-available`),
+  addMenuItem: (staffId: string, data: Record<string, unknown>) => api.post(`/staff/${staffId}/menu-items`, data),
+  updateMenuItem: (staffId: string, itemId: string, data: Record<string, unknown>) => api.patch(`/staff/${staffId}/menu-items/${itemId}`, data),
+  deleteMenuItem: (staffId: string, itemId: string) => api.delete(`/staff/${staffId}/menu-items/${itemId}`),
 }
 
 // ─── Ratings ─────────────────────────────────────────────────────────────────
@@ -38,6 +41,7 @@ export const ratingsApi = {
   submitServiceRating: (data: FormData) => api.post('/ratings/service', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   submitClientRating: (data: Record<string, unknown>) => api.post('/ratings/client', data),
   getStaffRatings: (staffId: string, page = 1) => api.get(`/ratings/staff/${staffId}`, { params: { page } }),
+  getMyRatings: (page = 1) => api.get('/ratings/my', { params: { page } }),
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
@@ -71,6 +75,15 @@ export const marketplaceApi = {
   getProducts: (params: Record<string, unknown>) => api.get('/marketplace/products', { params }),
   getProduct: (id: string) => api.get(`/marketplace/products/${id}`),
   createOrder: (data: Record<string, unknown>) => api.post('/marketplace/orders', data),
+  createProduct: (data: Record<string, unknown>) => api.post('/marketplace/products', data),
+  updateProduct: (id: string, data: Record<string, unknown>) => api.patch(`/marketplace/products/${id}`, data),
+  deleteProduct: (id: string) => api.delete(`/marketplace/products/${id}`),
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+export const usersApi = {
+  getMe: () => api.get('/users/me'),
+  updateMe: (data: { name?: string; avatar?: string }) => api.patch('/users/me', data),
 }
 
 // ─── Community ───────────────────────────────────────────────────────────────
