@@ -43,7 +43,7 @@
     "immer": "^10.1.1",
     "lucide-react": "^0.511.0",
     "mapbox-gl": "^3.11.0",
-    "meilisearch": "^0.49.1",
+    "meilisearch": "^0.58.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.55.0",

@@ -1,4 +1,4 @@
-import { MeiliSearch } from 'meilisearch'
+import { Meilisearch as MeiliSearch } from 'meilisearch'
 
 const host = import.meta.env.VITE_MEILISEARCH_HOST ?? 'http://localhost:7700'
 const apiKey = import.meta.env.VITE_MEILISEARCH_KEY ?? ''

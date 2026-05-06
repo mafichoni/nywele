@@ -2,7 +2,9 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { forwardRef } from 'react'
 
-interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type MotionButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart'>
+
+interface Props extends MotionButtonProps {
   variant?: 'primary' | 'secondary' | 'gold' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
@@ -33,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
         whileTap={{ scale: 0.96 }}
         className={cn(base, variants[variant], sizes[size], fullWidth && 'w-full', className)}
         disabled={disabled || loading}
-        {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+        {...props}
       >
         {loading && (
           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
