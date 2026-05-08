@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, ArrowRight, RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
-import { signInWithPhone, verifyOtp } from '@/lib/supabase'
+import { setSession } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
-import { api } from '@/lib/api'
+import { api, authApi } from '@/lib/api'
 import type { UserRole } from '@/types'
 
 type Step = 'phone' | 'otp' | 'role'
@@ -37,15 +37,18 @@ export default function AuthPage() {
     }
   }, [resendSecs])
 
+  function formatPhone(raw: string) {
+    return raw.startsWith('+') ? raw : `+254${raw.replace(/^0/, '')}`
+  }
+
   async function sendOtp() {
-    const formatted = phone.startsWith('+') ? phone : `+254${phone.replace(/^0/, '')}`
+    const formatted = formatPhone(phone)
     setLoading(true)
     try {
-      const { error } = await signInWithPhone(formatted)
-      if (error) throw error
+      await authApi.requestOtp(formatted)
       setStep('otp')
       setResendSecs(60)
-      toast('Code sent to your phone!', 'success')
+      toast('Code sent — check Vercel logs if SMS is not configured.', 'success')
     } catch {
       toast('Could not send code. Check the number and try again.', 'error')
     } finally {
@@ -54,22 +57,21 @@ export default function AuthPage() {
   }
 
   async function confirmOtp() {
-    const formatted = phone.startsWith('+') ? phone : `+254${phone.replace(/^0/, '')}`
+    const formatted = formatPhone(phone)
     setLoading(true)
     try {
-      const { data, error } = await verifyOtp(formatted, otp)
-      if (error) throw error
-      if (data.user) {
-        // Check if user has a profile
-        try {
-          const { data: profile } = await api.get('/users/me')
-          setUser(profile.user)
-          setOnboarded(true)
-          navigate('/discover', { replace: true })
-        } catch {
-          // New user — pick role
-          setStep('role')
-        }
+      const { data } = await authApi.verifyOtp(formatted, otp)
+      // Establish the Supabase session returned by the backend
+      const { error: sessionError } = await setSession(data.session.access_token, data.session.refresh_token)
+      if (sessionError) throw sessionError
+      // Check if user already has a profile
+      try {
+        const { data: profile } = await api.get('/users/me')
+        setUser(profile.user)
+        setOnboarded(true)
+        navigate('/discover', { replace: true })
+      } catch {
+        setStep('role')
       }
     } catch {
       toast('Invalid code. Please try again.', 'error')

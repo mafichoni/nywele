@@ -86,6 +86,12 @@ export const usersApi = {
   updateMe: (data: { name?: string; avatar?: string }) => api.patch('/users/me', data),
 }
 
+// ─── Auth (backend-managed OTP, no SMS provider needed) ──────────────────────
+export const authApi = {
+  requestOtp: (phone: string) => api.post('/auth/request-otp', { phone }),
+  verifyOtp: (phone: string, otp: string) => api.post('/auth/verify-otp', { phone, otp }),
+}
+
 // ─── Community ───────────────────────────────────────────────────────────────
 export const communityApi = {
   getFeed: (page = 1) => api.get('/community/feed', { params: { page } }),

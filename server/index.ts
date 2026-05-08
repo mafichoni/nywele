@@ -58,6 +58,7 @@ app.decorate('authenticate', async function (req: FastifyRequest, reply: Fastify
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 import userRoutes from './routes/users.js'
+import authRoutes from './routes/auth.js'
 import staffRoutes from './routes/staff.js'
 import feedRoutes from './routes/feed.js'
 import ratingsRoutes from './routes/ratings.js'
@@ -69,6 +70,7 @@ import communityRoutes from './routes/community.js'
 import adminRoutes from './routes/admin.js'
 
 app.register(userRoutes, { prefix: '/v1/users' })
+app.register(authRoutes, { prefix: '/v1/auth' })
 app.register(staffRoutes, { prefix: '/v1/staff' })
 app.register(feedRoutes, { prefix: '/v1/feed' })
 app.register(ratingsRoutes, { prefix: '/v1/ratings' })

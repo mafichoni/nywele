@@ -28,6 +28,10 @@ export async function verifyOtp(phone: string, token: string) {
   return supabase.auth.verifyOtp({ phone, token, type: 'sms' })
 }
 
+export async function setSession(accessToken: string, refreshToken: string) {
+  return supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+}
+
 export async function signOut() {
   return supabase.auth.signOut()
 }
