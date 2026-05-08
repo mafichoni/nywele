@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Phone, ArrowRight, RefreshCcw } from 'lucide-react'
+import { Phone, ArrowRight, RefreshCcw, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useToast } from '@/components/ui/Toast'
 import { setSession } from '@/lib/supabase'
@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import { api, authApi } from '@/lib/api'
 import type { UserRole } from '@/types'
 
-type Step = 'phone' | 'otp' | 'role'
+type Step = 'phone' | 'otp' | 'password' | 'role'
 
 const ROLES: { role: UserRole; label: string; desc: string; emoji: string }[] = [
   { role: 'CLIENT',       label: "I'm a Client",      desc: 'Find & rate personal care professionals', emoji: '🌟' },
@@ -26,6 +26,7 @@ export default function AuthPage() {
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
+  const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(false)
   const [resendSecs, setResendSecs] = useState(0)
@@ -45,12 +46,38 @@ export default function AuthPage() {
     const formatted = formatPhone(phone)
     setLoading(true)
     try {
-      await authApi.requestOtp(formatted)
-      setStep('otp')
-      setResendSecs(60)
-      toast('Code sent — check Vercel logs if SMS is not configured.', 'success')
+      const { data } = await authApi.requestOtp(formatted)
+      if (data.mode === 'password') {
+        setStep('password')
+      } else {
+        setStep('otp')
+        setResendSecs(60)
+        toast('Code sent — check Vercel logs if SMS is not configured.', 'success')
+      }
     } catch {
       toast('Could not send code. Check the number and try again.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function adminLogin() {
+    const formatted = formatPhone(phone)
+    setLoading(true)
+    try {
+      const { data } = await authApi.adminLogin(formatted, password)
+      const { error: sessionError } = await setSession(data.session.access_token, data.session.refresh_token)
+      if (sessionError) throw sessionError
+      try {
+        const { data: profile } = await api.get('/users/me')
+        setUser(profile.user)
+        setOnboarded(true)
+        navigate('/superadmin', { replace: true })
+      } catch {
+        toast('Login succeeded but profile load failed.', 'error')
+      }
+    } catch {
+      toast('Invalid credentials.', 'error')
     } finally {
       setLoading(false)
     }
@@ -164,6 +191,36 @@ export default function AuthPage() {
             >
               <RefreshCcw size={13} />
               {resendSecs > 0 ? `Resend in ${resendSecs}s` : 'Resend Code'}
+            </button>
+          </div>
+        )}
+
+        {step === 'password' && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="font-heading font-bold text-white text-2xl">Admin Login</h2>
+              <p className="text-brand-green-lighter/70 text-sm mt-1">Enter your admin password</p>
+            </div>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-silver" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full rounded-2xl bg-white/10 border border-white/15 text-white pl-9 pr-4 py-3 text-base outline-none focus:border-brand-gold/60 placeholder-white/30"
+                onKeyDown={(e) => e.key === 'Enter' && password.length > 0 && adminLogin()}
+              />
+            </div>
+            <Button variant="gold" size="lg" fullWidth onClick={adminLogin} loading={loading} disabled={password.length === 0}>
+              Sign In <ArrowRight size={16} />
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setStep('phone'); setPassword('') }}
+              className="flex items-center justify-center gap-1.5 w-full text-sm text-brand-green-lighter/60 hover:text-brand-green-lighter transition-colors"
+            >
+              Back
             </button>
           </div>
         )}

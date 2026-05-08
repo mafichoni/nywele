@@ -90,6 +90,7 @@ export const usersApi = {
 export const authApi = {
   requestOtp: (phone: string) => api.post('/auth/request-otp', { phone }),
   verifyOtp: (phone: string, otp: string) => api.post('/auth/verify-otp', { phone, otp }),
+  adminLogin: (phone: string, password: string) => api.post('/auth/admin-login', { phone, password }),
 }
 
 // ─── Community ───────────────────────────────────────────────────────────────

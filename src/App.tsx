@@ -14,6 +14,7 @@ import RatingsPage from '@/pages/me/RatingsPage'
 import NotificationsPage from '@/pages/me/NotificationsPage'
 import SettingsPage from '@/pages/me/SettingsPage'
 import AdminPage from '@/pages/AdminPage'
+import SuperAdminPage from '@/pages/SuperAdminPage'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
 import { api } from '@/lib/api'
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="/me/notifications" element={<NotificationsPage />} />
         <Route path="/me/settings" element={<SettingsPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/superadmin" element={<SuperAdminPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/discover" replace />} />
